@@ -30,5 +30,5 @@ a = [[1, 2, 3],[1, 2],[1, 2, 3],[1, 2, 3],[1, 2, 3]]
 
 for each in range(4):
     for i in range(3):
-        print each, i
+        print(each, i)
 

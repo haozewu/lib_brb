@@ -82,7 +82,7 @@ class RuleBase(object):
     def input_transformation(self):
         for each in obj_list:
             if each.name != 'x8':
-                print "Value before input transformation: {}".format(each.transformed_val)
+                print("Value before input transformation: {}".format(each.transformed_val))
                 try:
                     user_input = float(each.input_val)
                 except:
@@ -107,7 +107,7 @@ class RuleBase(object):
                             each.transformed_val[j + 1] = str(val_1)
                             val_2 = 1 - val_1
                             each.transformed_val[j] = str(val_2)
-                print "Value after input transformation: {}".format(each.transformed_val)
+                print("Value after input transformation: {}".format(each.transformed_val))
 
     def activation_weight(self):
         matching_degree = list()
@@ -134,8 +134,8 @@ class RuleBase(object):
             current_rule.activation_weight = activation_weight
 
         for each in ref_val_list:
-            print "{} {} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2,
-                                             each.antecedent_2_ref_title, each.rule_weight, each.consequence_val, each.activation_weight)
+            print("{} {} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2,
+                                             each.antecedent_2_ref_title, each.rule_weight, each.consequence_val, each.activation_weight))
 
     def belief_update(self):
         tao = [0 for _ in range(3)]
@@ -161,7 +161,7 @@ class RuleBase(object):
             new_val_list = []
             for row in each.consequence_val:
                 # import pdb; pdb.set_trace()
-                for key, val in row.iteritems():
+                for key, val in row.items():
                     # print "Before: {} {}".format(key, val)
                     new_val = float(val) * update_value
                     new_val_list.append({str(key): new_val})
@@ -169,8 +169,8 @@ class RuleBase(object):
             each.consequence_val = new_val_list
 
         for each in self.rule_row_list:
-            print "{} {} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2,
-                                             each.antecedent_2_ref_title, each.rule_weight, each.consequence_val, each.activation_weight)
+            print("{} {} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2,
+                                             each.antecedent_2_ref_title, each.rule_weight, each.consequence_val, each.activation_weight))
 
     def aggregate_rule(self):
 
@@ -181,11 +181,11 @@ class RuleBase(object):
             for j in range(len(row.consequence_val)):
                 values = row.consequence_val[j]
                 # import pdb; pdb.set_trace()
-                if values.has_key('High'):
+                if 'High' in values:
                     consequent_array[i][0] = float(values['High'])
-                if values.has_key('Medium'):
+                if 'Medium' in values:
                     consequent_array[i][1] = float(values['Medium'])
-                if values.has_key('Low'):
+                if 'Low' in values:
                     consequent_array[i][2] = float(values['Low'])
 
         # Calculate mn from the consequent array and save in a 2D array(named mn here)
@@ -195,7 +195,7 @@ class RuleBase(object):
             for each in self.rule_row_list[i].consequence_val:
                 # import pdb;
                 # pdb.set_trace()
-                for key, val in each.iteritems():
+                for key, val in each.items():
                     if key == 'High':
                         mn[0][i] = float(
                             float(self.rule_row_list[i].activation_weight) *
@@ -254,7 +254,7 @@ class RuleBase(object):
         for k in range(len(rowsum)):
             aggregated_consequence_val[k] = m[k] / (1 - mhn)
 
-        print aggregated_consequence_val
+        print(aggregated_consequence_val)
 
 
 obj_list = list()
@@ -264,33 +264,33 @@ for each in data:
     obj.name = str(each)
     obj_list.append(obj)
 
-print "Initial Data:"
-print "Antecedent ID    Name     Attribute Weight    Reference Titles    Reference Values"
+print("Initial Data:")
+print("Antecedent ID    Name     Attribute Weight    Reference Titles    Reference Values")
 for row in obj_list:
-    print "{}   {}  {}  {}  {}".format(row.antecedent_id, row.antecedent_name, row.attribute_weight, row.ref_val, row.ref_title)
+    print("{}   {}  {}  {}  {}".format(row.antecedent_id, row.antecedent_name, row.attribute_weight, row.ref_val, row.ref_title))
 
 rule_base = RuleBase(obj_list)
 ref_val_list = rule_base.create_rule_base()
 
-print "\n\n"
-print "Rule Base: "
+print("\n\n")
+print("Rule Base: ")
 for each in ref_val_list:
-    print "{} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2, each.antecedent_2_ref_title, each.rule_weight, each.consequence_val)
+    print("{} {} {} {} {} {}".format(each.antecedent_1, each.antecedent_1_ref_title, each.antecedent_2, each.antecedent_2_ref_title, each.rule_weight, each.consequence_val))
 
-print "\n\n"
-print "Input Transformation: "
+print("\n\n")
+print("Input Transformation: ")
 
 rule_base.input_transformation()
 
-print "\n\n"
-print "Rule base with activation weight"
+print("\n\n")
+print("Rule base with activation weight")
 
 rule_base.activation_weight()
 
-print "\n\n"
-print "Belief Update"
+print("\n\n")
+print("Belief Update")
 rule_base.belief_update()
 
-print "\n\n"
-print "Aggregated rule for X8:"
+print("\n\n")
+print("Aggregated rule for X8:")
 rule_base.aggregate_rule()

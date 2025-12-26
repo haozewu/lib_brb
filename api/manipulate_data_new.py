@@ -1,8 +1,8 @@
 import json
 from collections import OrderedDict
 import logging
-from rules import Rules
-from data import Data
+from .rules import Rules
+from .data import Data
 
 # with open('data.json') as file_data:
 # with open('single_tree.json') as file_data:
@@ -72,7 +72,7 @@ class RuleBase(object):
 
         # print "Combinations are: {}".format(combinations)
 
-        print "Consequence values are: {}".format(self.con_ref_values)
+        print("Consequence values are: {}".format(self.con_ref_values))
 
         # Calculate y for each combination and distribute consequence values in the range
         for each in self.combinations:
@@ -132,7 +132,7 @@ class RuleBase(object):
     def input_transformation(self):
         transformed_input = list()
         for each in self.obj_list:
-            print "Input value for {} is {}".format(each.name, each.input_val)
+            print("Input value for {} is {}".format(each.name, each.input_val))
             # print "Value before input transformation: {}".format(each.transformed_val)
             try:
                 user_input = float(each.input_val)
@@ -159,7 +159,7 @@ class RuleBase(object):
                         each.transformed_val[j + 1] = str(val_1)
                         val_2 = 1 - val_1
                         each.transformed_val[j] = str(val_2)
-            print "Value after input transformation: {}".format(each.transformed_val)
+            print("Value after input transformation: {}".format(each.transformed_val))
             transformed_input.append(each.transformed_val)
         return transformed_input
 

@@ -10,9 +10,9 @@ import json
 from collections import OrderedDict
 
 from flask import Flask, jsonify, request
-from manipulate_data_new import RuleBase
-from tree_traversal_bottom_up import TreeTraversalBottomUp
-from data import Data
+from .manipulate_data_new import RuleBase
+from .tree_traversal_bottom_up import TreeTraversalBottomUp
+from .data import Data
 
 app = Flask(__name__)
 
@@ -212,7 +212,7 @@ def initiate_brb():
 
     if request.method == 'POST':
         data = request.get_json()
-        print data
+        print(data)
 
         access_key = create_hash()
         file_name = '' + str(access_key) + '.json'
