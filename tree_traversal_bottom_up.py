@@ -10,7 +10,7 @@ import json
 from manipulate_data_new import RuleBase
 from data import Data
 
-# Read data from file
+# 读取输入数据文件（默认 temp_data.json，可按需切换）
 with open('temp_data.json') as file_data:
 # with open('2nd_order_tree.json') as file_data:
 #with open('api/single_tree.json') as file_data:
@@ -20,13 +20,13 @@ with open('temp_data.json') as file_data:
 
 obj_list = list()
 
-# Save each node data as an object in a list
+# 把每个节点的字典转成 Data 对象
 for each in data:
     obj = Data(**data[each])
     obj.name = str(each)
     obj_list.append(obj)
 
-# Sort the obj_list based on is_input is true
+# 按是否已有输入值排序，先处理叶子节点
 obj_list.sort(key=lambda x: x.is_input == "true", reverse=True)
 print("Initial nodes: {}".format([str(each.antecedent_id) for each in obj_list]))
 
@@ -40,14 +40,13 @@ subtree = 1
 
 result = list()
 
-# While you have an object in obj_list
+# 只要还有未合并的节点，就持续自底向上计算
 while len(obj_list):
     print("\n\nIteration: {}\n".format(count))
     count += 1
 
-    # Get parent of the current node.
+    # 找当前节点的父节点对象
     parent = None
-    # parent_id =
     for each in obj_list:
         if each.name == obj_list[i].parent:
             parent = each
@@ -55,20 +54,20 @@ while len(obj_list):
 
     visiting = list()
 
-    # Find if there is any other node which has the same parent
+    # 收集与当前节点同父的兄弟节点
     for j in range(i + 1, len(obj_list)):
         if obj_list[i].parent == obj_list[j].parent:
             visiting.append(obj_list[j])
     visiting.append(obj_list[i]) # Add the current node in the list
 
-    # Check if all the siblings has is_input true or not.
+    # 检查这些兄弟节点是否都已成为输入节点
     isAllInput = True
     for each in visiting:
         if each.is_input != 'true':
             isAllInput = False
 
     if len(visiting) == len(obj_list):
-        # Compute the BRB sub-tree for the nodes in visiting.
+        # 已到达根层或只剩当前父节点下的这一组：计算该 BRB 子树
         print("Computing value of {} for {}".format(parent.antecedent_id,
                                                     [str(each.antecedent_id) for each in visiting if each.antecedent_id != parent.antecedent_id]))
         # import pdb; pdb.set_trace()
@@ -82,6 +81,7 @@ while len(obj_list):
         result.insert(count, consequence_val)
         parent.consequence_val = consequence_val
 
+        # 将父节点参考值与聚合后的 belief 做点积得到清晰值
         crisp_val = 0.0
         for i in range(len(parent.ref_val)):
             crisp_val += float(parent.ref_val[i]) * float(consequence_val[i])
@@ -103,7 +103,7 @@ while len(obj_list):
 
     print("For {}, parent is: {}".format(str(obj_list[i].antecedent_id), parent.antecedent_id))
 
-    # if not all the siblings has same parent, continue to the next node of obj_list
+    # 还有兄弟未准备好就跳到下一个节点
     if not isAllInput:
         i += 1
         print("Current Nodes: {}".format([str(each.antecedent_id) for each in visiting]))
@@ -111,7 +111,7 @@ while len(obj_list):
         obj_list.sort(key=lambda x: x.is_input == "true", reverse=True)
         continue
     else:
-        # Compute the BRB sub-tree for the nodes in visiting.
+        # 这一组兄弟都就绪：计算父节点的 BRB 聚合
         print("Computing value of {} for {}".format(parent.antecedent_id, [str(each.antecedent_id) for each in visiting]))
         # import pdb; pdb.set_trace()
         # brb_calculation = RuleBase()
@@ -124,6 +124,7 @@ while len(obj_list):
         parent.consequence_val = consequence_val
         result.insert(count, consequence_val)
 
+        # 清晰值 = 参考值与 belief 的加权和
         crisp_val = 0.0
         for i in range(len(parent.ref_val)):
             crisp_val += float(parent.ref_val[i]) * float(consequence_val[i])

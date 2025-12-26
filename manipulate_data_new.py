@@ -15,19 +15,19 @@ class RuleBase(object):
         self.intermediate_ref_val = 0
         self.rule_row_list = list()
         self.parent = parent
-        self.con_ref_values = [0 for _ in range(len(self.parent.ref_val))]
-        self.combinations = [[]]
+        self.con_ref_values = [0 for _ in range(len(self.parent.ref_val))]  # 父节点各参考级别的计算值
+        self.combinations = [[]]  # 前件参考值的笛卡尔组合
 
     '''
-    Create initial rule base
+    创建初始规则库
     '''
 
     def create_rule_base(self):
-        cons_ref_val_1 = 0
-        cons_ref_val_n = 0
+        cons_ref_val_1 = 0  # 父节点参考值上界（权重*子参考值最大）
+        cons_ref_val_n = 0  # 父节点参考值下界（权重*子参考值最小）
 
         for each in self.obj_list:
-            # calculate the range of consequence values(First and last)
+            # 计算父节点后件取值范围（首尾）
             cons_ref_val_1 += float(
                 float(each.attribute_weight) * float(each.ref_val[0])
             )
@@ -40,7 +40,7 @@ class RuleBase(object):
         self.con_ref_values[0] = cons_ref_val_1
         self.con_ref_values[len(self.con_ref_values) - 1] = cons_ref_val_n
 
-        # calculate intermediate values within the range.
+        # 在范围内按等分生成中间参考值
         intermediate_cons_ref_val_num = len(self.parent.ref_val) - 1
         for i in range(1, intermediate_cons_ref_val_num):
             current_val = float(cons_ref_val_1 * i * 1.0) + float(cons_ref_val_n * (intermediate_cons_ref_val_num - i))
@@ -49,7 +49,7 @@ class RuleBase(object):
             # logging.warning("New value: {}".format(current_val))
 
 
-        # Calculate the number of possible combinations of reference values.
+        # 生成所有前件参考值索引组合（笛卡尔积）
         array_for_ref_count = [[]]
 
         for each in self.obj_list:
@@ -74,7 +74,7 @@ class RuleBase(object):
 
         print("Consequence values are: {}".format(self.con_ref_values))
 
-        # Calculate y for each combination and distribute consequence values in the range
+        # 对每个组合计算 y，并在父节点参考值区间内分配 belief
         for each in self.combinations:
             rules = Rules()
             row_val = [0 for _ in range(len(self.con_ref_values))]
@@ -112,7 +112,7 @@ class RuleBase(object):
         return self.rule_row_list
 
     '''
-    Transform input value in the range of consequent values
+    将输入值映射/截断到参考值区间，生成每个前件的隶属度向量
     '''
 
     def input_transformation(self):
@@ -147,7 +147,7 @@ class RuleBase(object):
             print("Value after input transformation: {}".format(each.transformed_val))
 
     '''
-    Calculate activation weight
+    计算激活权重：u 为隶属度，a 为属性权重，匹配度=∏(u_i^a_i)
     '''
 
     def activation_weight(self):
@@ -178,11 +178,11 @@ class RuleBase(object):
 
 
     '''
-    Update rule base
+    belief 更新：根据已知输入数量调整后件 belief
     '''
 
     def belief_update(self):
-        tao = [0 for _ in range(len(self.obj_list))]
+        tao = [0 for _ in range(len(self.obj_list))]  # tao[i]=1 表示该前件有输入
         for i in range(len(self.obj_list)):
             # if obj_list[i].name != 'x8':
             try:
@@ -201,6 +201,7 @@ class RuleBase(object):
         if sum([each for each in tao]) <= 0:
             update_value = 1
         else:
+            # 已知输入的平均隶属度，用于按输入完整度缩放 belief
             update_value = total / float(sum([each for each in tao]))
 
         for each in self.rule_row_list:
@@ -216,17 +217,17 @@ class RuleBase(object):
             print("{}".format(each.consequence_val))
 
     '''
-    Rule aggregation
+    规则聚合：按 ER 公式把所有规则的后件合并成父节点 belief
     '''
     def aggregate_rule(self):
-        # Get all the consequent value list from rule base
+        # 收集每条规则的后件 belief 向量
         consequent_array = []
 
         for i in range(len(self.rule_row_list)):
             row = self.rule_row_list[i]
             consequent_array.insert(i, row.consequence_val)
 
-        # Calculate mn from the consequent array and save in a 2D array(named mn here)
+        # mn[x][y] = 规则 y 在父节点参考级别 x 的激活部分
         mn = [[0 for _ in range(len(self.combinations))] for _ in range(len(self.con_ref_values))]
 
         for i in range(len(self.rule_row_list)):
@@ -239,7 +240,7 @@ class RuleBase(object):
                         float(each)
                     )
 
-        # Calculate md from the consequent array and save in a 1Ds array(named md here)
+        # md[y] = 规则 y 对所有后件 belief 的未分配部分 (1 - α*sum(belief))
         md = [0 for _ in range(len(self.rule_row_list))]
 
         for j in range(len(consequent_array)):
@@ -249,9 +250,7 @@ class RuleBase(object):
 
             md[j] = 1 - (float(self.rule_row_list[j].activation_weight) * total)
 
-        # Calculate d in a 1D array in several steps
-
-        # Step 1: calculate total rowsum
+        # Step 1: 计算每个后件级别的 rowsum（所有规则组合）
         rowsum = [1 for _ in range(3)]
 
         for x in range(len(rowsum)):
@@ -260,13 +259,13 @@ class RuleBase(object):
 
         total_rowsum = sum(rowsum)
 
-        # Step 2: Calculate mh and save in a 1D array
+        # Step 2: 全部规则未分配部分的乘积 mh
         mh = 1
 
         for i in range(len(md)):
           mh *= md[i]
 
-        # Step 3: Calculate kn, kn1, m(1D array), mhn and aggregated_consequence_val
+        # Step 3: 计算规范化因子 kn/kn1、聚合后 belief m 以及未分配质量 mhn
         kn = total_rowsum - (2 * mh)
         kn1 = 1 / kn
 

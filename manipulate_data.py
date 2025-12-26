@@ -17,9 +17,9 @@ class RuleBase(object):
         self.rule_row_list = list()
 
     def create_rule_base(self):
-        cons_ref_val_1 = 0
-        cons_ref_val_2 = 0
-        cons_ref_val_3 = 0
+        cons_ref_val_1 = 0  # 父节点参考值上界（权重*子参考值最大）
+        cons_ref_val_2 = 0  # 父节点参考值中间值
+        cons_ref_val_3 = 0  # 父节点参考值下界
         for each in obj_list:
             if each.name != 'x8':
                 cons_ref_val_1 += float(
@@ -44,6 +44,7 @@ class RuleBase(object):
                 rules.antecedent_2 = obj_list[1].antecedent_id
                 rules.parent = obj_list[2].parent
 
+                # 组合后的 y = w1*x1 + w2*x2
                 self.intermediate_ref_val = a + float(
                         (float(obj_list[2].attribute_weight) * float(obj_list[2].ref_val[i])) +
                         (float(obj_list[1].attribute_weight) * float(obj_list[1].ref_val[j]))
@@ -113,6 +114,7 @@ class RuleBase(object):
         matching_degree = list()
         for i in range(len(obj_list[2].ref_val)):
             for j in range(len(obj_list[1].ref_val)):
+                # 匹配度 = ∏(u_i^a_i)，u 为隶属度，a 为属性权重
                 degree = float(
                     pow(float(obj_list[2].transformed_val[i]), float(obj_list[2].attribute_weight)) *
                     pow(float(obj_list[1].transformed_val[j]), float(obj_list[1].attribute_weight))
@@ -138,7 +140,7 @@ class RuleBase(object):
                                              each.antecedent_2_ref_title, each.rule_weight, each.consequence_val, each.activation_weight))
 
     def belief_update(self):
-        tao = [0 for _ in range(3)]
+        tao = [0 for _ in range(3)]  # 标记前件是否有输入
 
         for i in range(len(obj_list)):
             if obj_list[i].name != 'x8':
@@ -155,6 +157,7 @@ class RuleBase(object):
                 summation = sum([float(each) for each in obj_list[j].transformed_val])
                 total += summation
 
+        # 计算平均隶属度（此处固定除以2，因为只有两个前件）
         update_value = total / 2
 
         for each in self.rule_row_list:
@@ -174,7 +177,7 @@ class RuleBase(object):
 
     def aggregate_rule(self):
 
-        # Create 2D array for consequent values from rule base
+        # 把规则库的后件值整理成二维数组
         consequent_array = [[0 for _ in range(3)] for _ in range(9)]
         for i in range(len(self.rule_row_list)):
             row = self.rule_row_list[i]
@@ -188,7 +191,7 @@ class RuleBase(object):
                 if 'Low' in values:
                     consequent_array[i][2] = float(values['Low'])
 
-        # Calculate mn from the consequent array and save in a 2D array(named mn here)
+        # mn[x][y] = 规则 y 在父节点参考级别 x 的激活部分
         mn = [[0 for _ in range(9)] for _ in range(3)]
 
         for i in range(len(self.rule_row_list)):
@@ -212,7 +215,7 @@ class RuleBase(object):
                             float(val)
                         )
 
-        # Calculate md from the consequent array and save in a 1Ds array(named md here)
+        # md[y] = 规则 y 的未分配质量
         md = [0 for _ in range(len(self.rule_row_list))]
 
         for j in range(len(consequent_array)):
@@ -222,9 +225,7 @@ class RuleBase(object):
 
             md[j] = 1 - (float(self.rule_row_list[j].activation_weight) * total)
 
-        # Calculate d in a 1D array in several steps
-
-        # Step 1: calculate total rowsum
+        # Step 1: 计算 rowsum
         rowsum = [1 for _ in range(3)]
 
         for x in range(len(rowsum)):
@@ -233,13 +234,13 @@ class RuleBase(object):
 
         total_rowsum = sum(rowsum)
 
-        # Step 2: Calculate mh and save in a 1D array
+        # Step 2: 计算所有规则未分配部分的乘积 mh
         mh = 1
 
         for i in range(len(md)):
           mh *= md[i]
 
-        # Step 3: Calculate kn, kn1, m(1D array), mhn and aggregated_consequence_val
+        # Step 3: 计算 kn/kn1、聚合后 belief m 以及未分配质量 mhn
         kn = total_rowsum - (2 * mh)
         kn1 = 1 / kn
 
